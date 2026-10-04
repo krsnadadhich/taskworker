@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block title %}Bill #{{ bill.id }}{% endblock %}
+{% block body %}<h1>Bill #{{ bill.id }} · {{ bill.invoice_no }}</h1>
+<table>
+<tr><th>Vendor</th><td>{{ bill.vendor }}</td></tr><tr><th>Invoice number</th><td>{{ bill.invoice_no }}</td></tr>
+<tr><th>Amount</th><td>{{ bill.amount_cents|money }}</td></tr><tr><th>Due date</th><td>{{ bill.due_date }}</td></tr>
+<tr><th>Status</th><td><span class="badge {{ bill.status }}">{{ bill.status }}</span></td></tr><tr><th>Notes</th><td>{{ bill.notes }}</td></tr></table>
+<p>{% if bill.status != 'paid' %}<a class="btn" href="{{ url_for('edit_bill', bill_id=bill.id) }}">Edit bill</a>
+<form method="post" action="{{ url_for('pay_bill', bill_id=bill.id) }}" style="display:inline"><button type="submit" class="danger">Pay bill</button></form>{% endif %}
+<a href="{{ url_for('bills') }}">Back to bills</a></p>{% endblock %}

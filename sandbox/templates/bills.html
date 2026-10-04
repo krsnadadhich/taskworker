@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block title %}Bills{% endblock %}
+{% block body %}<h1>Bills</h1>
+<form method="get" action="{{ url_for('bills') }}"><label for="q">Search vendor or invoice number</label><input id="q" name="q" value="{{ q }}"><p><button type="submit">Search</button></p></form>
+<table><tr><th>Bill</th><th>Invoice no.</th><th>Vendor</th><th>Amount</th><th>Due</th><th>Status</th></tr>
+{% for b in bills %}<tr><td><a href="{{ url_for('bill_detail', bill_id=b.id) }}">#{{ b.id }}</a></td><td>{{ b.invoice_no }}</td><td>{{ b.vendor }}</td><td>{{ b.amount_cents|money }}</td><td>{{ b.due_date }}</td><td><span class="badge {{ b.status }}">{{ b.status }}</span></td></tr>
+{% else %}<tr><td colspan="6">No bills found.</td></tr>{% endfor %}</table>{% endblock %}

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}BillTrack{% endblock %} · BillTrack</title>
+<style>
+ body{font:15px/1.5 system-ui,sans-serif;margin:0;color:#1c2330;background:#f5f6f8}
+ header{background:#1c2330;color:#fff;padding:12px 24px;display:flex;gap:24px;align-items:center}
+ header a{color:#cfd6e4;text-decoration:none} header strong{color:#fff;margin-right:8px}
+ main{max-width:860px;margin:24px auto;padding:0 24px}
+ table{width:100%;border-collapse:collapse;background:#fff} th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #e3e6ec}
+ label{display:block;margin:12px 0 4px;font-weight:600} input,select,textarea{width:100%;padding:7px;border:1px solid #b9c0cc;border-radius:4px;box-sizing:border-box}
+ button,.btn{background:#2f5fd0;color:#fff;border:0;padding:8px 16px;border-radius:4px;cursor:pointer;text-decoration:none;display:inline-block;font-size:15px}
+ button.danger{background:#b3261e} .flash{background:#e3f4e6;border:1px solid #9bd0a5;padding:8px 12px;margin-bottom:16px}
+ .error{background:#fdeceb;border:1px solid #e5a29d;padding:8px 12px;margin-bottom:16px}
+ .badge{padding:2px 8px;border-radius:10px;font-size:13px;background:#eef;} .badge.paid{background:#dff3e2}
+</style></head><body>
+<header><strong>BillTrack</strong><a href="{{ url_for('bills') }}">Bills</a><a href="{{ url_for('new_bill') }}">New bill</a><a href="{{ url_for('vendors') }}">Vendors</a></header>
+<main>
+{% for m in get_flashed_messages() %}<div class="flash" role="status">{{ m }}</div>{% endfor %}
+{% block body %}{% endblock %}
+</main></body></html>

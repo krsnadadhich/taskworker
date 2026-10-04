@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}{{ 'Edit bill' if bill else 'New bill' }}{% endblock %}
+{% block body %}<h1>{{ 'Edit bill #%d' % bill.id if bill else 'New bill' }}</h1>
+{% if error %}<div class="error" role="alert">{{ error }}</div>{% endif %}
+<form method="post" action="{{ url_for('update_bill', bill_id=bill.id) if bill else url_for('create_bill') }}">
+{% if not bill %}
+<label for="vendor_id">Vendor</label><select id="vendor_id" name="vendor_id"><option value="">-- select --</option>
+{% for v in vendors %}<option value="{{ v.id }}" {{ 'selected' if form.get('vendor_id') == v.id|string }}>{{ v.name }}</option>{% endfor %}</select>
+<label for="invoice_no">Invoice number</label><input id="invoice_no" name="invoice_no" value="{{ form.get('invoice_no', '') }}">
+{% endif %}
+<label for="amount">Amount (USD, numbers only)</label><input id="amount" name="amount" value="{{ form.get('amount', '%.2f' % (bill.amount_cents / 100) if bill else '') }}">
+<label for="due_date">Due date (DD/MM/YYYY)</label><input id="due_date" name="due_date" placeholder="DD/MM/YYYY" value="{{ form.get('due_date', '') }}">
+<label for="notes">Notes</label><textarea id="notes" name="notes" rows="3">{{ form.get('notes', bill.notes if bill else '') }}</textarea>
+<p><button type="submit">{{ 'Save changes' if bill else 'Save bill' }}</button></p></form>{% endblock %}
