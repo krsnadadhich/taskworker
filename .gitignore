@@ -5,4 +5,3 @@ runs/
 workspace/
 .pytest_cache/
 *.log
-*.mp4

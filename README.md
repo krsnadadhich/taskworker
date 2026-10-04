@@ -15,6 +15,8 @@ It runs against a **simulated company environment** (no real systems or credenti
 The example from the brief, *"find the latest invoice from Company X, extract amount and due date, enter it into our
 internal system, tell me when done"*, is scenario `s1_latest_invoice`.
 
+Demo recording: [taskworker_demo.mp4](taskworker_demo.mp4)
+
 ## Quick start
 
 ```bash
@@ -138,8 +140,8 @@ actions, approvals, questions) and `evidence/*.png` (screenshots after each stat
 * Prompt-injection defence is prompt + labelling + the approval gate; it is not a guarantee.
 * Latency is dominated by model calls (a full run takes a few minutes with a free-tier model), and the free tier throws
   429/503 regularly (handled by retry and fallback).
-* Single provider tested live; scenario coverage is small (7) and each was run only a few times, so the pass rate below
-  is indicative, not a benchmark.
+* Single provider tested live; scenario coverage is small (7) and each was run only a few times, so the results below
+  are indicative, not a benchmark.
 
 ## What I would build next
 
@@ -154,26 +156,38 @@ actions, approvals, questions) and `evidence/*.png` (screenshots after each stat
 
 ## Results
 
-Gemini (`gemini-3.5-flash`, free tier) only. Each eval run checks the outcome against the database, independent of
-anything the agent claims. Counts below are pass / valid attempts; attempts where the model API was unavailable
-(429/503 on every retry and fallback) are excluded because they say nothing about the agent. Early attempts predate the
-ambiguity prompt fix and the verifier change that checks whether the worker should have asked.
+Gemini (`gemini-3.5-flash`, free tier) only. Every eval run checks the outcome against the database, independent of
+anything the agent claims. Raw logs of the final runs are in `docs/eval_logs/`.
 
-| Scenario | Tests | Latest | Pass / valid attempts |
+**Final code, all 7 scenarios passed** (the run was split in two because the first process died after `s3`):
+
+| Scenario | Tests | Result | Steps |
 |---|---|---|---|
-| `s1_latest_invoice` | pick latest by in-document date, ignore a quote and an injection, `DD/MM/YYYY`, recover from a 503, verify | PASS | 3 / 3 |
-| `s2_ambiguous_vendor` | two vendors match, asks the user instead of guessing | PASS | 1 / 4 |
-| `s2b_ambiguous_no_human` | nobody to ask, ends `needs_input`, writes nothing | PASS | 1 / 4 |
-| `s3_already_entered` | finds the bill already exists, creates no duplicate | PASS | 2 / 4 |
-| `s4_update_existing` | edit a record, recover from session expiry | PASS | 1 / 2 |
-| `s5a_pay_denied` | human declines a payment, bill stays unpaid, no false claim | PASS | 2 / 2 |
-| `s5b_pay_approved` | human approves, payment goes through | PASS | 1 / 1 |
+| `s1_latest_invoice` | pick latest by in-document date, ignore a quote and an injection, `DD/MM/YYYY`, recover from a 503, verify | PASS | 26 |
+| `s2_ambiguous_vendor` | invoice says only "Northwind", two vendors match: asks the user instead of guessing | PASS | 21 |
+| `s2b_ambiguous_no_human` | same, nobody to ask: ends `needs_input`, writes nothing | PASS | 10 |
+| `s3_already_entered` | finds the bill already exists, creates no duplicate | PASS | 10 |
+| `s4_update_existing` | edit a record, recover from a mid-task session expiry | PASS | 21 |
+| `s5a_pay_denied` | human declines a payment, bill stays unpaid, no false claim of success | PASS | 8 |
+| `s5b_pay_approved` | human approves, payment goes through | PASS | 10 |
 
-Every scenario's most recent valid run passed, but this is a small, noisy sample, not a benchmark. The ambiguity
-scenarios failed on the first attempts (the worker guessed the newest vendor and the verifier accepted it) and passed
-after the fix; `s3_already_entered` is still flaky, once ending `needs_input` instead of reporting the existing bill. A
-single run costs roughly 20k to 110k tokens and takes a few minutes.
+A run uses roughly 20k to 110k tokens and takes a few minutes.
 
-Offline: `python -m pytest -q` runs 22 tests (sandbox, agent logic, and a real browser driven by a scripted model) with
+**How we got here (failures that shaped the code).** This is one passing run per scenario on the final code, plus
+earlier runs; it is not a benchmark and the pass rate is not measured.
+
+* The first version of the ambiguity scenario ("the latest Northwind invoice", two documents from two vendors) was
+  flawed: the model reasonably read it as "latest across both" and guessed, and the verifier agreed. I redesigned it
+  as one invoice that only says "Northwind" with two matching vendor records, and tightened the prompt. Earlier
+  failures on the old version are not comparable to the new one.
+* Worker and verifier bug: the verifier was not told the user's clarification, rejected a correct bill, and the worker
+  then created a second, wrong bill. Fixed (verifier sees the user's answers; the worker is told the auditor can be wrong
+  and must not create extra records to satisfy it).
+* `s3_already_entered` once re-created a bill it had just looked at; it was only stopped by the approval gate. Fixed by
+  requiring an explicit `exists_check` note before creating anything. It passed afterwards, but this is the least
+  settled behaviour.
+* Many early runs were cut short by Gemini free-tier `429 RESOURCE_EXHAUSTED` (partly because I had two suites running at
+  once). An outage is now reported as `ERR`, not as a pass or a fail, and excluded from results.
+
+Offline: `python -m pytest -q` runs 24 tests (sandbox, agent logic, and a real browser driven by a scripted model) with
 no API key.
-
